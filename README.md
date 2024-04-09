@@ -1,2 +1,1 @@
-# pawadventures-be
-Official API for PawAdventures.com
+Official PAW Backend
