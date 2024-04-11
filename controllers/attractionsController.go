@@ -21,7 +21,7 @@ func AttractionsCreate(c *gin.Context) {
 		Price            int                       `json:"price" binding:"required"`
 		Rating           int                       `json:"rating" binding:"required"`
 		SocialMediaStack []models.SocialMediaStack `json:"social_media_stack"`
-		Details 		 	 []models.Detail            `json:"offers"`
+		Details 		 []models.Detail           `json:"details"`
 	}
 
 	if err := c.BindJSON(&body); err != nil {
