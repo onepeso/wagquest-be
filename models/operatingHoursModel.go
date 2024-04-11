@@ -1,10 +1,13 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+)
 
 type OperatingHours struct {
-	gorm.Model
-	AttractionID uint
-	Day          string `json:"day"`
-	Hours        string `json:"hours"`
+    ID           uint      `gorm:"primaryKey" json:"id"`
+    AttractionID uint      `gorm:"index" json:"attraction_id"`
+    Day          string    `gorm:"not null" json:"day"`
+    OpenTime     time.Duration `gorm:"not null" json:"open_time"`
+    CloseTime    time.Duration `gorm:"not null" json:"close_time"`
 }
