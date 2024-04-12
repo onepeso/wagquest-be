@@ -22,7 +22,7 @@ func main() {
 
 	// CORS
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000", "http://10.0.0.124:3000"} // Update this when deploying
+	config.AllowOrigins = []string{"http://localhost:3000", "http://10.0.0.124:3000", "https://wagquest-fe.vercel.app/", "wagquest-94ktzww4j-onepeso-studio.vercel.app", "https://wagquest.com"} // Update this when deploying
 	router.Use(cors.New(config))
 
 	// ATTRACTION API ENDPOINT ROUTES
