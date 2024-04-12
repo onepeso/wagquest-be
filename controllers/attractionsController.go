@@ -67,7 +67,7 @@ func AttractionsIndex(c *gin.Context) {
 	})
 }
 
-func AttractionsShow(c *gin.Context) {
+func AttractionsShowByID(c *gin.Context) {
 	id := c.Param("id")
 
 	var attraction models.Attractions
@@ -81,6 +81,22 @@ func AttractionsShow(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"attraction": attraction,
 	})
+}
+
+func AttractionsShowBySlug(c *gin.Context) {
+    slug := c.Param("slug")
+
+    var attraction models.Attractions
+    result := initializers.DB.Where("slug = ?", slug).Preload("Location").Preload("OperatingHours").Preload("SocialMediaStack").Preload("Details").First(&attraction)
+
+    if result.Error != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "attraction": attraction,
+    })
 }
 
 func AttractionsUpdate(c *gin.Context) {
