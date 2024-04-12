@@ -27,7 +27,8 @@ func main() {
 
 	// ATTRACTION API ENDPOINT ROUTES
 	router.GET("/attractions", controllers.AttractionsIndex)
-	router.GET("/attraction/:id", controllers.AttractionsShow)
+	router.GET("/attraction/:id", controllers.AttractionsShowByID)
+	router.GET("/attraction/slug/:slug", controllers.AttractionsShowBySlug)
 	router.POST("/attraction", controllers.AttractionsCreate)
 	router.PUT("/attraction/:id", controllers.AttractionsUpdate)
 	router.DELETE("/attraction/:id", controllers.AttractionsDelete)
