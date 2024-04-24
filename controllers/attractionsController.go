@@ -1,5 +1,3 @@
-// TODO: Need to add a better resonse/result when creating a house. Because the location is not being returned with data when creating a house.
-
 package controllers
 
 import (
@@ -21,7 +19,7 @@ func AttractionsCreate(c *gin.Context) {
 		Price            int                       `json:"price" binding:"required"`
 		Rating           int                       `json:"rating" binding:"required"`
 		SocialMediaStack []models.SocialMediaStack `json:"social_media_stack"`
-		Details 		 []models.Detail           `json:"details"`
+		Details          []models.Detail           `json:"details"`
 	}
 
 	if err := c.BindJSON(&body); err != nil {
@@ -43,17 +41,17 @@ func AttractionsCreate(c *gin.Context) {
 		Price:            body.Price,
 		Rating:           body.Rating,
 		SocialMediaStack: body.SocialMediaStack,
-		Details: 		  body.Details,
+		Details:          body.Details,
 	}
 
 	result := initializers.DB.Create(&attraction)
 
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create attraction", "details": result.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"attraction": attraction,
 	})
 }
@@ -74,29 +72,37 @@ func AttractionsShowByID(c *gin.Context) {
 	result := initializers.DB.Preload("Location").Preload("OperatingHours").Preload("SocialMediaStack").Preload("Details").First(&attraction, id)
 
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		if result.Error.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Attraction not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve attraction", "details": result.Error.Error()})
+		}
 		return
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"attraction": attraction,
 	})
 }
 
 func AttractionsShowBySlug(c *gin.Context) {
-    slug := c.Param("slug")
+	slug := c.Param("slug")
 
-    var attraction models.Attractions
-    result := initializers.DB.Where("slug = ?", slug).Preload("Location").Preload("OperatingHours").Preload("SocialMediaStack").Preload("Details").First(&attraction)
+	var attraction models.Attractions
+	result := initializers.DB.Where("slug = ?", slug).Preload("Location").Preload("OperatingHours").Preload("SocialMediaStack").Preload("Details").First(&attraction)
 
-    if result.Error != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
-        return
-    }
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Attraction not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve attraction", "details": result.Error.Error()})
+		}
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{
-        "attraction": attraction,
-    })
+	c.JSON(http.StatusOK, gin.H{
+		"attraction": attraction,
+	})
 }
 
 func AttractionsUpdate(c *gin.Context) {
@@ -108,12 +114,12 @@ func AttractionsUpdate(c *gin.Context) {
 		Description      string                    `json:"description" binding:"required"`
 		OperatingHours   []models.OperatingHours   `json:"operating_hours"`
 		Content          string                    `json:"content" binding:"required"`
-		Images           []string                  `json:"images" binding:"required"` // Ensure consistency in JSON tag naming
+		Images           []string                  `json:"images" binding:"required"`
 		LocationID       uint                      `json:"location_id" binding:"required"`
 		Price            int                       `json:"price" binding:"required"`
 		Rating           int                       `json:"rating" binding:"required"`
 		SocialMediaStack []models.SocialMediaStack `json:"social_media_stack"`
-		Details 		 	 []models.Detail       `json:"details"`
+		Details          []models.Detail           `json:"details"`
 	}
 
 	if err := c.BindJSON(&body); err != nil {
@@ -125,7 +131,11 @@ func AttractionsUpdate(c *gin.Context) {
 	var attraction models.Attractions
 	result := initializers.DB.First(&attraction, id)
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		if result.Error.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Attraction not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve attraction", "details": result.Error.Error()})
+		}
 		return
 	}
 
@@ -135,19 +145,25 @@ func AttractionsUpdate(c *gin.Context) {
 		Description:      body.Description,
 		OperatingHours:   body.OperatingHours,
 		Content:          body.Content,
-		Images:           body.Images, // Assign the updated images directly
+		Images:           body.Images,
 		LocationID:       body.LocationID,
 		Price:            body.Price,
 		Rating:           body.Rating,
 		SocialMediaStack: body.SocialMediaStack,
-		Details: 		  body.Details,
+		Details:          body.Details,
 	})
 	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update attraction", "details": result.Error.Error()})
 		return
 	}
 
-	// Respond
+	// Fetch the updated attraction record
+	result = initializers.DB.Preload("Location").Preload("OperatingHours").Preload("SocialMediaStack").Preload("Details").First(&attraction, id)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve updated attraction", "details": result.Error.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"attraction": attraction,
 	})
@@ -156,7 +172,22 @@ func AttractionsUpdate(c *gin.Context) {
 func AttractionsDelete(c *gin.Context) {
 	id := c.Param("id")
 
-	initializers.DB.Delete(&models.Attractions{}, id)
+	var attraction models.Attractions
+	result := initializers.DB.First(&attraction, id)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Attraction not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve attraction", "details": result.Error.Error()})
+		}
+		return
+	}
 
-	c.Status(200)
+	result = initializers.DB.Delete(&attraction)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete attraction", "details": result.Error.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

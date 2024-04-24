@@ -16,6 +16,9 @@ func geocodeAddress(address string) (float64, float64, error) {
     if err != nil {
         return 0, 0, err
     }
+    if location == nil {
+        return 0, 0, fmt.Errorf("geocoding failed for address: %s", address)
+    }
     return location.Lat, location.Lng, nil
 }
 
